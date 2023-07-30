@@ -80,7 +80,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         //Init MediaPlayers
         MainPlayer = new MediaPlayer(_mainLibVlc);
         LyricPlayer = new MediaPlayer(_lyricLibVlc);
-        LyricPlayer.Volume = 0; //should always be 0 unless its the only one with video
+        //LyricPlayer.SetAudioOutput("adummy"); //basically mute
 
         MainPlayer.EndReached += MainPlayerOnEndReached;
         MainPlayer.PositionChanged += MainPlayerOnPositionChanged;
@@ -110,7 +110,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     partial void OnVolumeChanged(int value)
-        => MainPlayer.Volume = value;
+    {
+        MainPlayer.Volume = value;
+    }
 
     #region Playback Commands
 
@@ -132,7 +134,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private async Task PlayFromBlock(GroupWrapper group)
     {
         Stop(); //Just in case
-        LyricPlayer.Volume = 0;
 
         if (IsMainVideoWindowClosed || IsLyricVideoWindowClosed)
         {
@@ -141,14 +142,32 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        MainMedia = !string.IsNullOrEmpty(group.VideoGroup.MainVideoPath) ? new Media(_mainLibVlc, group.VideoGroup.MainVideoPath) : null;
-        LyricMedia = !string.IsNullOrEmpty(group.VideoGroup.SecondaryVideoPath) ? new Media(_lyricLibVlc, group.VideoGroup.SecondaryVideoPath) : null;
+        MainMedia = !string.IsNullOrEmpty(group.VideoGroup.MainVideoPath)
+            ? new Media(_mainLibVlc, group.VideoGroup.MainVideoPath)
+            : null;
+        if (MainMedia is not null)
+            await MainMedia.Parse();
+        LyricMedia = !string.IsNullOrEmpty(group.VideoGroup.SecondaryVideoPath)
+            ? new Media(_lyricLibVlc, group.VideoGroup.SecondaryVideoPath)
+            : null;
+        if (LyricMedia is not null)
+            await LyricMedia.Parse();
 
         MainPlayer.Media = MainMedia;
+        MainPlayer.Play();
+        MainPlayer.Pause();
+        MainPlayer.Position = 0f;
         LyricPlayer.Media = LyricMedia;
+        LyricPlayer.Play();
+        LyricPlayer.Pause();
+        LyricPlayer.Position = 0f;
 
-        if (MainMedia == null)
-            LyricPlayer.Volume = Volume; //Turn on lyricPlayer volume since its the only one with media
+        await Task.Delay(10); //this is needed otherwise both audios will play!
+        //LibVLC is insanely dumb when 2 instances do stuff, wow
+
+        if (MainMedia is not null)
+            LyricPlayer.SetAudioTrack(-1);
+
 
         var waitForMain = group.VideoGroup.MainVideoStartDelay > group.VideoGroup.SecondaryVideoStartDelay;
         var actualWaitTime = waitForMain
