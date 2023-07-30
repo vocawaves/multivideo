@@ -185,13 +185,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         LyricPlayer.Pause();
         LyricPlayer.Position = 0f;
 
-        await Task.Delay(10); //this is needed otherwise both audios will play!
-        //LibVLC is insanely dumb when 2 instances do stuff, wow
-
-        if (MainMedia is not null)
-            LyricPlayer.SetAudioTrack(-1);
-
-
         var waitForMain = group.VideoGroup.MainVideoStartDelay > group.VideoGroup.SecondaryVideoStartDelay;
         var actualWaitTime = waitForMain
             ? (group.VideoGroup.MainVideoStartDelay - group.VideoGroup.SecondaryVideoStartDelay)
