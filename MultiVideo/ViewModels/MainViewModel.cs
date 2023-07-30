@@ -83,7 +83,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         string[] lyricOptions = new string[]
         {
             "--http-port=8081",
-            "--http-password=kaito"
+            "--http-password=kaito",
+            "--no-audio"
         };
 
         _mainLibVlc = new LibVLC(mainOptions);
