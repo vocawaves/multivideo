@@ -10,6 +10,11 @@
              x:Class="MultiVideo.Views.MainView"
              x:DataType="vm:MainViewModel"
              Background="Transparent">
+    
+    <UserControl.Styles>
+        <StyleInclude Source="avares://Avalonia.Xaml.Interactions.Draggable/Styles.axaml" />
+    </UserControl.Styles>
+    
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
          to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
@@ -155,6 +160,14 @@
                                Text="Open Extra Window" />
                 </Grid>
             </Button>
+            <Button Height="100"
+                    Width="100"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Command="{Binding OpenReorderWindowCommand}"
+                    CommandParameter="{Binding $parent[Window]}">
+                <TextBlock Text="Reorder List"/>
+            </Button>
 
         </StackPanel>
 
@@ -166,6 +179,7 @@
                           Background="#44000000"
                           ClipToBounds="False"
                           ItemsSource="{Binding VideoGroups}">
+                
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel Orientation="Horizontal" />

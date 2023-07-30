@@ -314,6 +314,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _lyricVideoWindow.Show();
         IsLyricVideoWindowClosed = false;
     }
+    
+    [RelayCommand]
+    private async Task OpenReorderWindow(Window parent)
+    {
+        var reorderWindow = new ReorderListWindow()
+        {
+            DataContext = this
+        };
+        await reorderWindow.ShowDialog(parent);
+    }
 
     #endregion
 
