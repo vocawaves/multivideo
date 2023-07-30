@@ -7,14 +7,16 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="MultiVideo.Views.LyricVideoWindow"
         x:DataType="viewModels:MainViewModel"
+        Height="200"
+        Width="200"
         Title="LyricVideoWindow">
-        
-        <Design.DataContext>
-                <viewModels:MainViewModel />
-        </Design.DataContext>
-    
-        <avalonia:VideoView HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            MediaPlayer="{Binding LyricPlayer}" />
-        
+
+    <Design.DataContext>
+        <viewModels:MainViewModel />
+    </Design.DataContext>
+
+    <avalonia:VideoView HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        MediaPlayer="{Binding LyricPlayer}" />
+
 </Window>

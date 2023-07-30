@@ -11,11 +11,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia.Desktop" Version="11.0.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.0.1" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.18" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MultiVideo\MultiVideo.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <DirectPInvoke Include="libvlc" />
+    <DirectPInvoke Include="libvlccore" />
+    
+    <NativeLibrary Include="libvlc.lib" />
+    <NativeLibrary Include="libvlccore.lib" />
   </ItemGroup>
 </Project>

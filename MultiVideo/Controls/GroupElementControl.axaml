@@ -1,0 +1,46 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:MultiVideo.Controls">
+    <Design.PreviewWith>
+        <controls:GroupElementControl />
+    </Design.PreviewWith>
+
+    <Style Selector="controls|GroupElementControl">
+        <!-- Set Defaults -->
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid Margin="5">
+                    <TextBlock ZIndex="99"
+                               ClipToBounds="False"
+                               VerticalAlignment="Center"
+                               Margin="-25,0,0,0"
+                               Text="->"
+                               FontSize="35"
+                               FontWeight="Bold">
+                        <TextBlock.Effect>
+                            <DropShadowEffect/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+                    
+                    <Border CornerRadius="10"
+                            BorderBrush="White"
+                            BorderThickness="2">
+                        <Button Background="{TemplateBinding Background}"
+                                Command="{TemplateBinding MainCommand}"
+                                CommandParameter="{TemplateBinding MainCommandParameter}">
+                            <controls:VideoGroupControl VideoGroupSource="{Binding $parent[controls:GroupElementControl].Group.VideoGroup, FallbackValue=null}"/>
+                        </Button>
+                    </Border>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+        <Setter Property="ContextFlyout">
+            <MenuFlyout  Placement="Bottom">
+                <MenuItem Header="Edit" 
+                          Command="{Binding $parent[controls:GroupElementControl].EditVideoGroup}" />
+                <MenuItem Header="Delete" 
+                          Command="{Binding $parent[controls:GroupElementControl].RemoveVideoGroup}" />
+            </MenuFlyout>
+        </Setter>
+    </Style>
+</Styles>

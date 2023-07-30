@@ -7,19 +7,16 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="MultiVideo.Views.MainVideoWindow"
         x:DataType="viewModels:MainViewModel"
+        Height="200"
+        Width="200"
         Title="MainVideoWindow">
-    
+
     <Design.DataContext>
         <viewModels:MainViewModel />
     </Design.DataContext>
-    
-    <Grid VerticalAlignment="Stretch"
-          HorizontalAlignment="Stretch"
-          Background="Indigo">
-        <avalonia:VideoView Margin="10"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            MediaPlayer="{Binding MainPlayer}" />    
-    </Grid>
-    
+
+    <avalonia:VideoView HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        MediaPlayer="{Binding MainPlayer}" />
+
 </Window>

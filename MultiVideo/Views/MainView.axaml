@@ -3,28 +3,195 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:MultiVideo.ViewModels"
+             xmlns:controls="clr-namespace:MultiVideo.Controls"
+             xmlns:models="clr-namespace:MultiVideo.Models"
+             xmlns:views="clr-namespace:MultiVideo.Views"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="MultiVideo.Views.MainView"
-             x:DataType="vm:MainViewModel">
-  <Design.DataContext>
-    <!-- This only sets the DataContext for the previewer in an IDE,
+             x:DataType="vm:MainViewModel"
+             Background="Transparent">
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
          to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-    <vm:MainViewModel />
-  </Design.DataContext>
+        <vm:MainViewModel />
+    </Design.DataContext>
 
-    <StackPanel Orientation="Vertical">
-        <Button Content="Main Video Window"
-                Command="{Binding OpenMainVideoViewCommand}"/>
-        <Button Content="Lyric Video Window"
-                Command="{Binding OpenLyricVideoViewCommand}"/>
-        <TextBox Watermark="Main Video Location"
-                 Text="{Binding MainVideoPath}"/>
-        <TextBox Watermark="Lyric Video Location"
-                 Text="{Binding LyricVideoPath}"/>
-        <Button Content="Play"
-                Command="{Binding PlayVideosCommand}"/>
-        <TextBlock Text="{Binding MainPosition}"/>
-        <TextBlock Text="{Binding LyricPosition}"/>
-    </StackPanel>
-    
+    <Grid ColumnDefinitions="*,*"
+          RowDefinitions="Auto, Auto, *">
+
+        <Menu Grid.Column="0"
+              Grid.ColumnSpan="2"
+              Grid.Row="0">
+
+            <MenuItem Header="File">
+                <MenuItem Header="Load Groups"
+                          Command="{Binding LoadVideoGroupsCommand}"
+                          CommandParameter="{Binding $parent[Window]}" />
+                <MenuItem Header="Save Groups"
+                          Command="{Binding SaveVideoGroupsCommand}"
+                          CommandParameter="{Binding $parent[Window]}" />
+                <Separator />
+                <MenuItem Header="Exit" />
+            </MenuItem>
+            <MenuItem Header="Video Tiles">
+                <MenuItem Header="Add Group"
+                          Command="{Binding AddVideoGroupCommand}"
+                          CommandParameter="{Binding $parent[Window]}" />
+                <Separator />
+                <MenuItem Header="Remove All"
+                          Command="{Binding ClearVideoGroupsCommand}" />
+            </MenuItem>
+
+        </Menu>
+
+        <Grid Grid.Column="0"
+              Grid.Row="1"
+              Margin="15"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              ColumnDefinitions="*, Auto"
+              RowDefinitions="Auto, Auto">
+
+            <StackPanel Grid.Column="0"
+                        Grid.Row="0"
+                        Margin="10"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="5">
+                <Button Command="{Binding RewindCommand}">
+                    <Svg Path="/Assets/fast_rewind.svg" />
+                </Button>
+                <ToggleButton IsChecked="{Binding IsPlaying, Mode=OneWay}"
+                              Command="{Binding PlayFromButtonCommand}">
+                    <Svg Path="/Assets/play_pause.svg" />
+                </ToggleButton>
+                <Button Command="{Binding StopCommand}">
+                    <Svg Path="/Assets/stop.svg" />
+                </Button>
+                <Button Command="{Binding FastForwardCommand}">
+                    <Svg Path="/Assets/fast_forward.svg" />
+                </Button>
+            </StackPanel>
+            <StackPanel Grid.Column="0"
+                        Grid.Row="1"
+                        Margin="10"
+                        Orientation="Vertical"
+                        Spacing="5">
+                <TextBlock HorizontalAlignment="Center"
+                           Text="{Binding MainPosition}" />
+                <ProgressBar Minimum="0"
+                             Maximum="1"
+                             SmallChange="0.0001"
+                             LargeChange="0.01"
+                             Value="{Binding MainRealPosition}" />
+            </StackPanel>
+
+            <Slider Grid.Column="1"
+                    Grid.Row="0"
+                    Grid.RowSpan="2"
+                    Margin="10"
+                    Orientation="Vertical"
+                    Value="{Binding Volume}" />
+
+        </Grid>
+
+        <StackPanel Grid.Column="1"
+                    Grid.Row="1"
+                    Margin="15"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+
+            <Button Height="100"
+                    Width="100"
+                    IsEnabled="{Binding IsMainVideoWindowClosed}"
+                    Command="{Binding OpenMainVideoWindowCommand}">
+                <Grid RowDefinitions="*, Auto">
+
+                    <Image Grid.Row="0"
+                           ZIndex="1"
+                           Margin="0,0,0,6"
+                           Height="30"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Source="avares://MultiVideo/Assets/miku.png"
+                           RenderOptions.BitmapInterpolationMode="HighQuality" />
+
+                    <Svg Grid.Row="0"
+                         ZIndex="0"
+                         Path="/Assets/tv.svg" />
+
+                    <TextBlock Grid.Row="1"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Text="Open Holo Window" />
+                </Grid>
+            </Button>
+            <Button Height="100"
+                    Width="100"
+                    IsEnabled="{Binding IsLyricVideoWindowClosed}"
+                    Command="{Binding OpenLyricVideoWindowCommand}">
+                <Grid RowDefinitions="*, Auto">
+
+                    <Svg Grid.Row="0"
+                         ZIndex="1"
+                         Height="30"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         Path="/Assets/bubble.svg" />
+
+                    <Svg Grid.Row="0"
+                         ZIndex="0"
+                         Path="/Assets/tv.svg" />
+
+                    <TextBlock Grid.Row="1"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Text="Open Extra Window" />
+                </Grid>
+            </Button>
+
+        </StackPanel>
+
+        <ItemsControl Grid.Column="0"
+                      Grid.ColumnSpan="2"
+                      Grid.Row="2"
+                      CornerRadius="10"
+                      Background="#44000000"
+                      ClipToBounds="False"
+                      Margin="10"
+                      ItemsSource="{Binding VideoGroups}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="models:GroupWrapper">
+                    <controls:GroupElementControl Margin="5"
+                                                  ClipToBounds="False"
+                                                  Group="{Binding .}"
+                                                  ParentCollection="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).VideoGroups, FallbackValue=null}"
+                                                  MainCommand="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).PlayFromBlockCommand, FallbackValue=null}"
+                                                  MainCommandParameter="{Binding .}" >
+                        
+                        <controls:GroupElementControl.Styles>
+                            <Style Selector="controls|GroupElementControl:playing">
+                                <Setter Property="Background"
+                                        Value="Green"/>
+                            </Style>
+                        </controls:GroupElementControl.Styles>
+                    </controls:GroupElementControl>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+    </Grid>
+
 </UserControl>

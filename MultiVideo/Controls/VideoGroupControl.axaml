@@ -1,0 +1,29 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:MultiVideo.Controls">
+    <Design.PreviewWith>
+        <controls:VideoGroupControl/>
+    </Design.PreviewWith>
+
+    <Style Selector="controls|VideoGroupControl">
+        <!-- Set Defaults -->
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid RowDefinitions="*, Auto"
+                      Height="150"
+                      Width="150">
+                    <Image Grid.Row="0" 
+                           Margin="5"
+                           Source="{Binding $parent[controls:VideoGroupControl].VideoGroupSource.Thumbnail, FallbackValue=null}"/>
+                    <TextBlock Grid.Row="1"
+                               Margin="5"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               Text="{Binding $parent[controls:VideoGroupControl].VideoGroupSource.Title, FallbackValue='Unnamed'}"/>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+</Styles>

@@ -6,5 +6,7 @@
 
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://MultiVideo/Controls/VideoGroupControl.axaml"/>
+        <StyleInclude Source="avares://MultiVideo/Controls/GroupElementControl.axaml"/>
     </Application.Styles>
 </Application>
