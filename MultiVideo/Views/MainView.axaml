@@ -158,39 +158,40 @@
 
         </StackPanel>
 
-        <ItemsControl Grid.Column="0"
+        <ScrollViewer Grid.Column="0"
                       Grid.ColumnSpan="2"
                       Grid.Row="2"
-                      CornerRadius="10"
-                      Background="#44000000"
-                      ClipToBounds="False"
-                      Margin="10"
-                      ItemsSource="{Binding VideoGroups}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <WrapPanel Orientation="Horizontal" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
+                      Margin="10">
+            <ItemsControl CornerRadius="10"
+                          Background="#44000000"
+                          ClipToBounds="False"
+                          ItemsSource="{Binding VideoGroups}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
 
-            <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="models:GroupWrapper">
-                    <controls:GroupElementControl Margin="5"
-                                                  ClipToBounds="False"
-                                                  Group="{Binding .}"
-                                                  ParentCollection="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).VideoGroups, FallbackValue=null}"
-                                                  MainCommand="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).PlayFromBlockCommand, FallbackValue=null}"
-                                                  MainCommandParameter="{Binding .}" >
-                        
-                        <controls:GroupElementControl.Styles>
-                            <Style Selector="controls|GroupElementControl:playing">
-                                <Setter Property="Background"
-                                        Value="Green"/>
-                            </Style>
-                        </controls:GroupElementControl.Styles>
-                    </controls:GroupElementControl>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="models:GroupWrapper">
+                        <controls:GroupElementControl Margin="5"
+                                                      ClipToBounds="False"
+                                                      Group="{Binding .}"
+                                                      ParentCollection="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).VideoGroups, FallbackValue=null}"
+                                                      MainCommand="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).PlayFromBlockCommand, FallbackValue=null}"
+                                                      MainCommandParameter="{Binding .}">
+
+                            <controls:GroupElementControl.Styles>
+                                <Style Selector="controls|GroupElementControl:playing">
+                                    <Setter Property="Background"
+                                            Value="Green" />
+                                </Style>
+                            </controls:GroupElementControl.Styles>
+                        </controls:GroupElementControl>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
 
     </Grid>
 
