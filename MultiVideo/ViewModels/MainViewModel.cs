@@ -73,15 +73,38 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         //Init LibVLC
         Core.Initialize();
+        
+        string[] mainOptions = new string[]
+        {
+            "--http-port=8080",
+            "--http-password=kaito"
+        };
+        
+        string[] lyricOptions = new string[]
+        {
+            "--http-port=8081",
+            "--http-password=kaito"
+        };
 
-        _mainLibVlc = new LibVLC();
-        _lyricLibVlc = new LibVLC();
-
+        _mainLibVlc = new LibVLC(mainOptions);
+        _lyricLibVlc = new LibVLC(lyricOptions);
+        
+        // funky http for Numark
+        try
+        {
+            _mainLibVlc.AddInterface("http");
+            _lyricLibVlc.AddInterface("http");
+        }
+        catch
+        {
+            // ignored
+        }
+        
         //Init MediaPlayers
         MainPlayer = new MediaPlayer(_mainLibVlc);
         LyricPlayer = new MediaPlayer(_lyricLibVlc);
         //LyricPlayer.SetAudioOutput("adummy"); //basically mute
-
+        
         MainPlayer.EndReached += MainPlayerOnEndReached;
         MainPlayer.PositionChanged += MainPlayerOnPositionChanged;
     }
