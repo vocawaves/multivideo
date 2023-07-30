@@ -9,9 +9,9 @@ public partial class VideoGroup : ObservableObject
     [ObservableProperty]
     private string _title = "Untitled";
     [ObservableProperty]
-    private string _mainVideoPath;
+    private string? _mainVideoPath;
     [ObservableProperty]
-    private string _secondaryVideoPath;
+    private string? _secondaryVideoPath;
     [ObservableProperty]
     private TimeSpan _mainVideoStartDelay = TimeSpan.Zero;
     [ObservableProperty]
@@ -21,8 +21,8 @@ public partial class VideoGroup : ObservableObject
     private Bitmap? _thumbnail;
 
     public VideoGroup(
-        string mainVideoPath, 
-        string secondaryVideoPath, 
+        string? mainVideoPath, 
+        string? secondaryVideoPath, 
         string? title = null, 
         TimeSpan? mainDelay = null, 
         TimeSpan? secondaryDelay = null, 

@@ -139,8 +139,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        MainMedia = new Media(_mainLibVlc, group.VideoGroup.MainVideoPath);
-        LyricMedia = new Media(_lyricLibVlc, group.VideoGroup.SecondaryVideoPath);
+        MainMedia = !string.IsNullOrEmpty(group.VideoGroup.MainVideoPath) ? new Media(_mainLibVlc, group.VideoGroup.MainVideoPath) : null;
+        LyricMedia = !string.IsNullOrEmpty(group.VideoGroup.SecondaryVideoPath) ? new Media(_lyricLibVlc, group.VideoGroup.SecondaryVideoPath) : null;
 
         MainPlayer.Media = MainMedia;
         LyricPlayer.Media = LyricMedia;

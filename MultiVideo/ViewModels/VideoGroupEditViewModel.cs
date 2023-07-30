@@ -11,7 +11,7 @@ namespace MultiVideo.ViewModels;
 public partial class VideoGroupEditViewModel : ViewModelBase
 {
     [ObservableProperty] private GroupWrapper _group = null!;
-    
+
     [ObservableProperty] private string? _thumbnailPath;
 
     [RelayCommand]
@@ -20,14 +20,13 @@ public partial class VideoGroupEditViewModel : ViewModelBase
         var validPaths = CheckPaths();
         if (!validPaths)
             return;
-        
+
         if (ThumbnailPath != null)
         {
             using var bmp = new Bitmap(ThumbnailPath);
-            //Is 0 valid for auto scaling?
             Group.VideoGroup.Thumbnail = bmp.CreateScaledBitmap(new PixelSize(200, 200));
         }
-        
+
         parent.Close(Group);
     }
 
@@ -36,10 +35,9 @@ public partial class VideoGroupEditViewModel : ViewModelBase
         Group.VideoGroup.MainVideoPath = Group.VideoGroup.MainVideoPath?.Trim().Replace("\"", "")!;
         Group.VideoGroup.SecondaryVideoPath = Group.VideoGroup.SecondaryVideoPath?.Trim().Replace("\"", "")!;
         ThumbnailPath = ThumbnailPath?.Trim().Replace("\"", "")!;
-        
-        return File.Exists(Group.VideoGroup.MainVideoPath) &&
-               File.Exists(Group.VideoGroup.SecondaryVideoPath) &&
-               (ThumbnailPath == null || File.Exists(ThumbnailPath));
+
+        return (File.Exists(Group.VideoGroup.MainVideoPath) || File.Exists(Group.VideoGroup.SecondaryVideoPath)) 
+            && (ThumbnailPath == null || File.Exists(ThumbnailPath));
     }
 
     [RelayCommand]

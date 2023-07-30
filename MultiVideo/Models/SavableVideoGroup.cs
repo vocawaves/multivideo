@@ -8,8 +8,8 @@ namespace MultiVideo.Models;
 public class SavableVideoGroup
 {
     public string Title { get; set; } = "Untitled";
-    public string MainVideoPath { get; set; } = null!;
-    public string SecondaryVideoPath { get; set; } = null!;
+    public string? MainVideoPath { get; set; }
+    public string? SecondaryVideoPath { get; set; }
     public TimeSpan MainVideoStartDelay { get; set; }
     public TimeSpan SecondaryVideoStartDelay { get; set; }
     public string? ThumbnailBase64 { get; set; }
