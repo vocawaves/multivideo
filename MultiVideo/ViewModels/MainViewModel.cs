@@ -248,6 +248,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task FastForward()
     {
+        if (VideoGroups.Count == 0)
+        {
+            NotificationManager.Show(new Notification(
+                "Cannot fast forward",
+                "You have no video groups",
+                NotificationType.Warning));
+            return;
+        }
+        
         var index = CurrentPlayingGroup is null ? 0 : VideoGroups.IndexOf(CurrentPlayingGroup);
         if (index == VideoGroups.Count - 1)
         {
