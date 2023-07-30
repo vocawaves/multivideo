@@ -75,11 +75,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         Core.Initialize();
 
         _mainLibVlc = new LibVLC();
-        _lyricLibVlc = new LibVLC("--no-audio");
+        _lyricLibVlc = new LibVLC();
 
         //Init MediaPlayers
         MainPlayer = new MediaPlayer(_mainLibVlc);
         LyricPlayer = new MediaPlayer(_lyricLibVlc);
+        LyricPlayer.Volume = 0; //should always be 0 unless its the only one with video
 
         MainPlayer.EndReached += MainPlayerOnEndReached;
         MainPlayer.PositionChanged += MainPlayerOnPositionChanged;
@@ -131,6 +132,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private async Task PlayFromBlock(GroupWrapper group)
     {
         Stop(); //Just in case
+        LyricPlayer.Volume = 0;
 
         if (IsMainVideoWindowClosed || IsLyricVideoWindowClosed)
         {
@@ -144,6 +146,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         MainPlayer.Media = MainMedia;
         LyricPlayer.Media = LyricMedia;
+
+        if (MainMedia == null)
+            LyricPlayer.Volume = Volume; //Turn on lyricPlayer volume since its the only one with media
 
         var waitForMain = group.VideoGroup.MainVideoStartDelay > group.VideoGroup.SecondaryVideoStartDelay;
         var actualWaitTime = waitForMain
