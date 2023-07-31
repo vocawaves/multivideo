@@ -437,6 +437,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
+    [RelayCommand]
+    private async Task Exit(Window parent)
+    {
+        Dispose();
+    }
+
     #endregion
 
     public void Dispose()

@@ -36,7 +36,8 @@
                           Command="{Binding SaveVideoGroupsCommand}"
                           CommandParameter="{Binding $parent[Window]}" />
                 <Separator />
-                <MenuItem Header="Exit" />
+                <MenuItem Header="Exit"
+                          Command="{Binding ExitCommand}"  />
             </MenuItem>
             <MenuItem Header="Video Tiles">
                 <MenuItem Header="Add Group"
