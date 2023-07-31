@@ -7,9 +7,10 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="MultiVideo.Views.LyricVideoWindow"
         x:DataType="viewModels:MainViewModel"
-        Height="200"
-        Width="200"
-        Title="LyricVideoWindow">
+        Icon="/Assets/miku.ico"
+        Height="460"
+        Width="800"
+        Title="Lyric Video Window">
 
     <Design.DataContext>
         <viewModels:MainViewModel />

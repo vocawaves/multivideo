@@ -7,7 +7,8 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="MultiVideo.Views.ReorderListWindow"
         x:DataType="viewModels:MainViewModel"
-        Title="ReorderListWindow"
+        Icon="/Assets/miku.ico"
+        Title="Reorder List"
         Height="500"
         SizeToContent="Width">
 
