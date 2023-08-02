@@ -118,9 +118,26 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         LyricAudioPlayer.PositionChanged += MainPlayerOnPositionChanged;
     }
 
+    partial void OnMainRealPositionChanged(float oldValue, float newValue)
+    {
+        var oldPosInTime = TimeSpan.FromMilliseconds(oldValue * (IsAudioLyricInUse ? LyricAudioPlayer.Length : MainPlayer.Length));
+        var newPosInTime = TimeSpan.FromMilliseconds(newValue * (IsAudioLyricInUse ? LyricAudioPlayer.Length : MainPlayer.Length));
+        var diff = newPosInTime - oldPosInTime;
+        if (!(diff.TotalSeconds > 1) && !(diff.TotalSeconds < 0)) 
+            return;
+        MainPlayer.PositionChanged -= MainPlayerOnPositionChanged;
+        LyricAudioPlayer.PositionChanged -= MainPlayerOnPositionChanged;
+        MainPlayer.Position = newValue;
+        if (IsAudioLyricInUse)
+            LyricAudioPlayer.Position = newValue;
+        else
+            LyricPlayer.Position = newValue;
+        MainPlayer.PositionChanged += MainPlayerOnPositionChanged;
+        LyricAudioPlayer.PositionChanged += MainPlayerOnPositionChanged;
+    }
+
     private void MainPlayerOnPositionChanged(object? sender, MediaPlayerPositionChangedEventArgs e)
     {
-        
         MainPosition = TimeSpan.FromMilliseconds(e.Position * (IsAudioLyricInUse ? LyricAudioPlayer.Length : MainPlayer.Length));
         MainRealPosition = e.Position;
     }
@@ -135,7 +152,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var indexOfCurrent = VideoGroups.IndexOf(CurrentPlayingGroup);
         if (indexOfCurrent == VideoGroups.Count - 1)
         {
-            Stop();
+            _ = Dispatcher.UIThread.InvokeAsync(Stop);
             return;
         }
 
