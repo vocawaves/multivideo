@@ -34,11 +34,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private readonly LibVLC _mainLibVlc;
     private readonly LibVLC _lyricLibVlc;
+    private readonly LibVLC _lyricAudioLibVlc;
 
 
     [ObservableProperty] private MediaPlayer _mainPlayer;
 
     [ObservableProperty] private MediaPlayer _lyricPlayer;
+
+    [ObservableProperty] private MediaPlayer _lyricAudioPlayer;
+
+    [ObservableProperty] private bool _isAudioLyricInUse = false;
 
     [ObservableProperty] private Media? _mainMedia;
 
@@ -74,11 +79,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         //Init LibVLC
         Core.Initialize();
         
-     //   string[] mainOptions = new string[]
-     //   {
-     //       "--http-port=8080",
-      //      "--http-password=kaito"
-      //  };
+        //string[] mainOptions = new string[]
+        //{
+        //    "--http-port=8080",
+        //    "--http-password=kaito"
+        //};
         
         string[] lyricOptions = new string[]
         {
@@ -89,30 +94,34 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         _mainLibVlc = new LibVLC();
         _lyricLibVlc = new LibVLC(lyricOptions);
+        _lyricAudioLibVlc = new LibVLC();
         
-        // funky http for Numark
-       // try
-     //   {
-     //       _mainLibVlc.AddInterface("http");
-     //       _lyricLibVlc.AddInterface("http");
-     //   }
-     //   catch
-     //   {
+        //funky http for Numark
+        //try
+        //{
+        //    _mainLibVlc.AddInterface("http");
+        //    _lyricLibVlc.AddInterface("http");
+        //}
+        //catch
+        //{
             // ignored
-     //   }
+        //}
         
         //Init MediaPlayers
         MainPlayer = new MediaPlayer(_mainLibVlc);
         LyricPlayer = new MediaPlayer(_lyricLibVlc);
+        LyricAudioPlayer = new MediaPlayer(_lyricAudioLibVlc);
         //LyricPlayer.SetAudioOutput("adummy"); //basically mute
 
         MainPlayer.EndReached += MainPlayerOnEndReached;
         MainPlayer.PositionChanged += MainPlayerOnPositionChanged;
+        LyricAudioPlayer.PositionChanged += MainPlayerOnPositionChanged;
     }
 
     private void MainPlayerOnPositionChanged(object? sender, MediaPlayerPositionChangedEventArgs e)
     {
-        MainPosition = TimeSpan.FromMilliseconds(e.Position * MainPlayer.Length);
+        
+        MainPosition = TimeSpan.FromMilliseconds(e.Position * (IsAudioLyricInUse ? LyricAudioPlayer.Length : MainPlayer.Length));
         MainRealPosition = e.Position;
     }
 
@@ -130,12 +139,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        _ = Dispatcher.UIThread.InvokeAsync(async () => await PlayFromBlock(VideoGroups[indexOfCurrent + 1]));
+        _ = Dispatcher.UIThread.InvokeAsync(async () => await PlayFromBlock(VideoGroups[indexOfCurrent + 1]).ConfigureAwait(true));
     }
 
     partial void OnVolumeChanged(int value)
     {
         MainPlayer.Volume = value;
+        LyricAudioPlayer.Volume = value;
     }
 
     #region Playback Commands
@@ -146,6 +156,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IsPlaying = false;
         MainPlayer.Stop();
         LyricPlayer.Stop();
+        LyricAudioPlayer.Stop();
         MainMedia = null;
         LyricMedia = null;
         if (CurrentPlayingGroup is null)
@@ -166,25 +177,27 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        IsAudioLyricInUse = string.IsNullOrEmpty(group.VideoGroup.MainVideoPath);
+
+        var mainVlcToUse = _mainLibVlc;
+        var lyricVlcToUse = IsAudioLyricInUse ? _lyricAudioLibVlc : _lyricLibVlc;
+        var mainPlayerToUse = MainPlayer;
+        var lyricPlayerToUse = IsAudioLyricInUse ? LyricAudioPlayer : LyricPlayer;
+
         MainMedia = !string.IsNullOrEmpty(group.VideoGroup.MainVideoPath)
-            ? new Media(_mainLibVlc, group.VideoGroup.MainVideoPath)
+            ? new Media(mainVlcToUse, group.VideoGroup.MainVideoPath)
             : null;
         if (MainMedia is not null)
-            await MainMedia.Parse();
+            await MainMedia.Parse().ConfigureAwait(true);
         LyricMedia = !string.IsNullOrEmpty(group.VideoGroup.SecondaryVideoPath)
-            ? new Media(_lyricLibVlc, group.VideoGroup.SecondaryVideoPath)
+            ? new Media(lyricVlcToUse, group.VideoGroup.SecondaryVideoPath)
             : null;
         if (LyricMedia is not null)
-            await LyricMedia.Parse();
+            await LyricMedia.Parse().ConfigureAwait(true);
 
-        MainPlayer.Media = MainMedia;
-        MainPlayer.Play();
-        MainPlayer.Pause();
-        MainPlayer.Position = 0f;
-        LyricPlayer.Media = LyricMedia;
-        LyricPlayer.Play();
-        LyricPlayer.Pause();
-        LyricPlayer.Position = 0f;
+        mainPlayerToUse.Media = MainMedia;
+        lyricPlayerToUse.Media = LyricMedia;
+        
 
         var waitForMain = group.VideoGroup.MainVideoStartDelay > group.VideoGroup.SecondaryVideoStartDelay;
         var actualWaitTime = waitForMain
@@ -195,20 +208,20 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (group.VideoGroup.MainVideoStartDelay == TimeSpan.Zero &&
             group.VideoGroup.SecondaryVideoStartDelay == TimeSpan.Zero)
         {
-            MainPlayer.Play();
-            LyricPlayer.Play();
+            mainPlayerToUse.Play();
+            lyricPlayerToUse.Play();
         }
         else if (waitForMain)
         {
-            LyricPlayer.Play();
-            await Task.Delay(actualWaitTime);
-            MainPlayer.Play();
+            lyricPlayerToUse.Play();
+            await Task.Delay(actualWaitTime).ConfigureAwait(true);
+            mainPlayerToUse.Play();
         }
         else
         {
-            MainPlayer.Play();
-            await Task.Delay(actualWaitTime);
-            LyricPlayer.Play();
+            mainPlayerToUse.Play();
+            await Task.Delay(actualWaitTime).ConfigureAwait(true);
+            lyricPlayerToUse.Play();
         }
 
         IsPlaying = true;
@@ -220,15 +233,21 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private async Task PlayFromButton()
     {
         //Pause
-        if (MainPlayer.State == VLCState.Playing || LyricPlayer.State == VLCState.Playing)
+        if (MainPlayer.State == VLCState.Playing || LyricPlayer.State == VLCState.Playing || LyricAudioPlayer.State == VLCState.Playing)
         {
             MainPlayer.Pause();
-            LyricPlayer.Pause();
+            if (IsAudioLyricInUse)
+                LyricAudioPlayer.Pause();
+            else
+                LyricPlayer.Pause();
         }
-        else if (MainPlayer.State == VLCState.Paused || LyricPlayer.State == VLCState.Paused)
+        else if (MainPlayer.State == VLCState.Paused || LyricPlayer.State == VLCState.Paused || LyricAudioPlayer.State == VLCState.Paused)
         {
             MainPlayer.Play();
-            LyricPlayer.Play();
+            if (IsAudioLyricInUse)
+                LyricAudioPlayer.Play();
+            else
+                LyricPlayer.Play();
         }
         else
         {
@@ -259,7 +278,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        await PlayFromBlock(VideoGroups[index - 1]);
+        await PlayFromBlock(VideoGroups[index - 1]).ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -284,7 +303,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        await PlayFromBlock(VideoGroups[index + 1]);
+        await PlayFromBlock(VideoGroups[index + 1]).ConfigureAwait(true);
     }
 
     #endregion
@@ -322,7 +341,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             DataContext = this
         };
-        await reorderWindow.ShowDialog(parent);
+        await reorderWindow.ShowDialog(parent).ConfigureAwait(true);
     }
 
     #endregion
@@ -344,7 +363,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 Group = groupWrapper
             }
         };
-        var result = await editWindow.ShowDialog<GroupWrapper?>(parent);
+        var result = await editWindow.ShowDialog<GroupWrapper?>(parent).ConfigureAwait(true);
         if (result is null)
             return;
 
@@ -382,7 +401,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
         };
 
-        var savePath = await parent.StorageProvider.SaveFilePickerAsync(sfo);
+        var savePath = await parent.StorageProvider.SaveFilePickerAsync(sfo).ConfigureAwait(true);
         if (savePath is null)
             return;
 
@@ -392,7 +411,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (path is null)
             return;
 
-        await File.WriteAllTextAsync(path, json);
+        await File.WriteAllTextAsync(path, json).ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -412,7 +431,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
         };
 
-        var files = await parent.StorageProvider.OpenFilePickerAsync(ofo);
+        var files = await parent.StorageProvider.OpenFilePickerAsync(ofo).ConfigureAwait(true);
         if (files.Count == 0)
             return;
 
@@ -420,13 +439,29 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (path is null)
             return;
 
-        var json = await File.ReadAllTextAsync(path);
+        var json = await File.ReadAllTextAsync(path).ConfigureAwait(true);
         var savableGroups = JsonSerializer.Deserialize(json, _saveCtx.SavableVideoGroupArray);
         if (savableGroups is null)
             return;
 
+        var missingGroups = savableGroups.Where(x =>
+            (!string.IsNullOrEmpty(x.MainVideoPath) && !File.Exists(x.MainVideoPath)) ||
+            (!string.IsNullOrEmpty(x.SecondaryVideoPath) && !File.Exists(x.SecondaryVideoPath)));
+        if (missingGroups.Any())
+        {
+            var mvm = new MissingVideosViewModel(savableGroups);
+            var mvw = new MissingVideosWindow()
+            {
+                DataContext = mvm
+            };
+            var mvwResult = await mvw.ShowDialog<bool?>(parent).ConfigureAwait(true);
+            if (mvwResult is null or false)
+                return;
+        }
+
         var groups = savableGroups.Select(x => x.ToVideoGroup());
         VideoGroups.Clear();
+        
         foreach (var group in groups)
         {
             VideoGroups.Add(new GroupWrapper
@@ -438,9 +473,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
-    private async Task Exit(Window parent)
+    private void Exit(Window parent)
     {
-        Dispose();
+        var l = Application.Current!.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        l?.Shutdown();
     }
 
     #endregion
@@ -450,9 +486,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         Stop();
         _mainVideoWindow?.Close();
         _lyricVideoWindow?.Close();
-        MainPlayer?.Dispose();
-        LyricPlayer?.Dispose();
+        MainPlayer.Dispose();
+        LyricPlayer.Dispose();
+        LyricAudioPlayer.Dispose();
         _mainLibVlc.Dispose();
         _lyricLibVlc.Dispose();
+        _lyricAudioLibVlc.Dispose();
     }
 }

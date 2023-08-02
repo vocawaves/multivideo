@@ -6,6 +6,7 @@ using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
+using Avalonia.Controls.Mixins;
 using Avalonia.Controls.Primitives;
 using MultiVideo.Models;
 using MultiVideo.ViewModels;
@@ -13,7 +14,7 @@ using MultiVideo.Views;
 
 namespace MultiVideo.Controls;
 
-[PseudoClasses(":playing")]
+[PseudoClasses(":playing", ":pressed")]
 public class GroupElementControl : TemplatedControl
 {
     public static readonly StyledProperty<GroupWrapper?> GroupProperty =
@@ -58,13 +59,12 @@ public class GroupElementControl : TemplatedControl
 
     static GroupElementControl()
     {
+        PressedMixin.Attach<GroupElementControl>();
         GroupProperty.Changed.AddClassHandler<GroupElementControl>((x, e) =>
         {
-            var oldGroup = e.OldValue as GroupWrapper;
-            if (oldGroup is not null)
+            if (e.OldValue is GroupWrapper oldGroup)
                 oldGroup.PropertyChanged -= x.OnGroupPropertyChanged;
-            var newGroup = e.NewValue as GroupWrapper;
-            if (newGroup is not null)
+            if (e.NewValue is GroupWrapper newGroup)
                 newGroup.PropertyChanged += x.OnGroupPropertyChanged;
         });
     }
