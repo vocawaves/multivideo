@@ -59,7 +59,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty] private TimeSpan _mainPosition = TimeSpan.Zero;
 
-    [ObservableProperty] private float _mainRealPosition = 0f;
+    public float MainRealPosition
+    {
+        get => IsAudioLyricInUse ? LyricAudioPlayer.Position : MainPlayer.Position;
+        set
+        {
+            MainPlayer.Position = value;
+            if (IsAudioLyricInUse)
+                LyricAudioPlayer.Position = value;
+            else
+                LyricPlayer.Position = value;
+        }
+    }
 
     [ObservableProperty] private GroupWrapper? _currentPlayingGroup;
 
@@ -118,28 +129,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         LyricAudioPlayer.PositionChanged += MainPlayerOnPositionChanged;
     }
 
-    partial void OnMainRealPositionChanged(float oldValue, float newValue)
-    {
-        var oldPosInTime = TimeSpan.FromMilliseconds(oldValue * (IsAudioLyricInUse ? LyricAudioPlayer.Length : MainPlayer.Length));
-        var newPosInTime = TimeSpan.FromMilliseconds(newValue * (IsAudioLyricInUse ? LyricAudioPlayer.Length : MainPlayer.Length));
-        var diff = newPosInTime - oldPosInTime;
-        if (!(diff.TotalSeconds > 1) && !(diff.TotalSeconds < 0)) 
-            return;
-        MainPlayer.PositionChanged -= MainPlayerOnPositionChanged;
-        LyricAudioPlayer.PositionChanged -= MainPlayerOnPositionChanged;
-        MainPlayer.Position = newValue;
-        if (IsAudioLyricInUse)
-            LyricAudioPlayer.Position = newValue;
-        else
-            LyricPlayer.Position = newValue;
-        MainPlayer.PositionChanged += MainPlayerOnPositionChanged;
-        LyricAudioPlayer.PositionChanged += MainPlayerOnPositionChanged;
-    }
-
     private void MainPlayerOnPositionChanged(object? sender, MediaPlayerPositionChangedEventArgs e)
     {
         MainPosition = TimeSpan.FromMilliseconds(e.Position * (IsAudioLyricInUse ? LyricAudioPlayer.Length : MainPlayer.Length));
-        MainRealPosition = e.Position;
+        OnPropertyChanged(nameof(MainRealPosition));
     }
 
     private void MainPlayerOnEndReached(object? sender, EventArgs e)
