@@ -57,7 +57,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty] private int _volume = 100;
 
-    [ObservableProperty] private TimeSpan _mainPosition = TimeSpan.Zero;
+    public TimeSpan MainPosition => TimeSpan.FromMilliseconds(
+        (IsAudioLyricInUse ? LyricAudioPlayer.Position : MainPlayer.Position) *
+        (IsAudioLyricInUse ? LyricAudioPlayer.Length : MainPlayer.Length));
 
     public float MainRealPosition
     {
@@ -69,6 +71,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 LyricAudioPlayer.Position = value;
             else
                 LyricPlayer.Position = value;
+            OnPropertyChanged(nameof(MainPosition));
         }
     }
 
@@ -89,24 +92,24 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         //Init LibVLC
         Core.Initialize();
-        
+
         //string[] mainOptions = new string[]
         //{
         //    "--http-port=8080",
         //    "--http-password=kaito"
         //};
-        
+
         string[] lyricOptions = new string[]
         {
-          //  "--http-port=8081",
-         //   "--http-password=kaito",
+            //  "--http-port=8081",
+            //   "--http-password=kaito",
             "--no-audio"
         };
 
         _mainLibVlc = new LibVLC();
         _lyricLibVlc = new LibVLC(lyricOptions);
         _lyricAudioLibVlc = new LibVLC();
-        
+
         //funky http for Numark
         //try
         //{
@@ -115,14 +118,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         //}
         //catch
         //{
-            // ignored
+        // ignored
         //}
-        
+
         //Init MediaPlayers
         MainPlayer = new MediaPlayer(_mainLibVlc);
         LyricPlayer = new MediaPlayer(_lyricLibVlc);
         LyricAudioPlayer = new MediaPlayer(_lyricAudioLibVlc);
-        //LyricPlayer.SetAudioOutput("adummy"); //basically mute
 
         MainPlayer.EndReached += MainPlayerOnEndReached;
         MainPlayer.PositionChanged += MainPlayerOnPositionChanged;
@@ -131,7 +133,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void MainPlayerOnPositionChanged(object? sender, MediaPlayerPositionChangedEventArgs e)
     {
-        MainPosition = TimeSpan.FromMilliseconds(e.Position * (IsAudioLyricInUse ? LyricAudioPlayer.Length : MainPlayer.Length));
+        OnPropertyChanged(nameof(MainPosition));
         OnPropertyChanged(nameof(MainRealPosition));
     }
 
@@ -149,7 +151,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        _ = Dispatcher.UIThread.InvokeAsync(async () => await PlayFromBlock(VideoGroups[indexOfCurrent + 1]).ConfigureAwait(true));
+        _ = Dispatcher.UIThread.InvokeAsync(async () =>
+            await PlayFromBlock(VideoGroups[indexOfCurrent + 1]).ConfigureAwait(true));
     }
 
     partial void OnVolumeChanged(int value)
@@ -207,7 +210,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         mainPlayerToUse.Media = MainMedia;
         lyricPlayerToUse.Media = LyricMedia;
-        
+
 
         var waitForMain = group.VideoGroup.MainVideoStartDelay > group.VideoGroup.SecondaryVideoStartDelay;
         var actualWaitTime = waitForMain
@@ -243,7 +246,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private async Task PlayFromButton()
     {
         //Pause
-        if (MainPlayer.State == VLCState.Playing || LyricPlayer.State == VLCState.Playing || LyricAudioPlayer.State == VLCState.Playing)
+        if (MainPlayer.State == VLCState.Playing || LyricPlayer.State == VLCState.Playing ||
+            LyricAudioPlayer.State == VLCState.Playing)
         {
             MainPlayer.Pause();
             if (IsAudioLyricInUse)
@@ -251,7 +255,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             else
                 LyricPlayer.Pause();
         }
-        else if (MainPlayer.State == VLCState.Paused || LyricPlayer.State == VLCState.Paused || LyricAudioPlayer.State == VLCState.Paused)
+        else if (MainPlayer.State == VLCState.Paused || LyricPlayer.State == VLCState.Paused ||
+                 LyricAudioPlayer.State == VLCState.Paused)
         {
             MainPlayer.Play();
             if (IsAudioLyricInUse)
@@ -302,7 +307,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 NotificationType.Warning));
             return;
         }
-        
+
         var index = CurrentPlayingGroup is null ? 0 : VideoGroups.IndexOf(CurrentPlayingGroup);
         if (index == VideoGroups.Count - 1)
         {
@@ -343,7 +348,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _lyricVideoWindow.Show();
         IsLyricVideoWindowClosed = false;
     }
-    
+
     [RelayCommand]
     private async Task OpenReorderWindow(Window parent)
     {
@@ -471,7 +476,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         var groups = savableGroups.Select(x => x.ToVideoGroup());
         VideoGroups.Clear();
-        
+
         foreach (var group in groups)
         {
             VideoGroups.Add(new GroupWrapper
