@@ -66,11 +66,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         get => IsAudioLyricInUse ? LyricAudioPlayer.Position : MainPlayer.Position;
         set
         {
-            MainPlayer.Position = value;
             if (IsAudioLyricInUse)
+            {
                 LyricAudioPlayer.Position = value;
-            else
-                LyricPlayer.Position = value;
+                OnPropertyChanged(nameof(MainPosition));
+                return;
+            }
+            var mainPosInTime = value * MainPlayer.Length;
+            var lyricPosInPercentage = (100.0f / LyricPlayer.Length) * mainPosInTime;
+            MainPlayer.Position = value;
+            LyricPlayer.Position = lyricPosInPercentage;
             OnPropertyChanged(nameof(MainPosition));
         }
     }
