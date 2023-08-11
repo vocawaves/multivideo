@@ -53,24 +53,24 @@ public partial class MissingVideosViewModel : ViewModelBase
         for (var i = 0; i < MissingGroups.Count; i++)
         {
             var group = MissingGroups[i];
-            if (!string.IsNullOrEmpty(group.MainVideoPath) || !File.Exists(group.MainVideoPath))
+            if (!string.IsNullOrEmpty(group.AudioVideoPath) && !File.Exists(group.NonAudioVideoPath))
             {
-                var fileName = Path.GetFileName(group.MainVideoPath);
+                var fileName = Path.GetFileName(group.AudioVideoPath);
                 var files = dirInfo.GetFiles(fileName!, SearchOption.AllDirectories);
                 if (files.Length != 0)
-                    group.MainVideoPath = files[0].FullName;
+                    group.AudioVideoPath = files[0].FullName;
             }
 
-            if (!string.IsNullOrEmpty(group.SecondaryVideoPath) || !File.Exists(group.SecondaryVideoPath))
+            if (!string.IsNullOrEmpty(group.NonAudioVideoPath) && !File.Exists(group.NonAudioVideoPath))
             {
-                var fileName = Path.GetFileName(group.SecondaryVideoPath);
+                var fileName = Path.GetFileName(group.NonAudioVideoPath);
                 var files = dirInfo.GetFiles(fileName!, SearchOption.AllDirectories);
                 if (files.Length != 0)
-                    group.SecondaryVideoPath = files[0].FullName;
+                    group.NonAudioVideoPath = files[0].FullName;
             }
 
-            if ((!string.IsNullOrEmpty(group.MainVideoPath) && !File.Exists(group.MainVideoPath)) ||
-                (!string.IsNullOrEmpty(group.SecondaryVideoPath) && !File.Exists(group.SecondaryVideoPath)))
+            if ((!string.IsNullOrEmpty(group.AudioVideoPath) && !File.Exists(group.AudioVideoPath)) ||
+                (!string.IsNullOrEmpty(group.NonAudioVideoPath) && !File.Exists(group.NonAudioVideoPath)))
                 continue;
 
             MissingGroups.Remove(group);

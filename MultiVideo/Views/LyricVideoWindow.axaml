@@ -16,18 +16,8 @@
         <viewModels:MainViewModel />
     </Design.DataContext>
 
-    <Grid HorizontalAlignment="Stretch"
-          VerticalAlignment="Stretch">
-        <avalonia:VideoView IsEnabled="{Binding !IsAudioLyricInUse}"
-                            IsVisible="{Binding !IsAudioLyricInUse}"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            MediaPlayer="{Binding LyricPlayer}" />
-        <avalonia:VideoView IsEnabled="{Binding IsAudioLyricInUse}"
-                            IsVisible="{Binding IsAudioLyricInUse}"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            MediaPlayer="{Binding LyricAudioPlayer}" />
-    </Grid>
+    <avalonia:VideoView HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        MediaPlayer="{Binding NoAudioPlayer}" />
 
 </Window>

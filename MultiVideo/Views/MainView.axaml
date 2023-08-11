@@ -36,6 +36,10 @@
                           Command="{Binding SaveVideoGroupsCommand}"
                           CommandParameter="{Binding $parent[Window]}" />
                 <Separator />
+                <MenuItem Header="Import v1 Groups"
+                          Command="{Binding ImportV1GroupsCommand}"
+                          CommandParameter="{Binding $parent[Window]}" />
+                <Separator />
                 <MenuItem Header="Exit" 
                           Command="{Binding ExitCommand}"/>
             </MenuItem>
@@ -81,16 +85,25 @@
             </StackPanel>
             <StackPanel Grid.Column="0"
                         Grid.Row="1"
-                        Margin="10"
+                        Margin="10,0"
                         Orientation="Vertical"
                         Spacing="5">
                 <TextBlock HorizontalAlignment="Center"
-                           Text="{Binding MainPosition}" />
-                <Slider Minimum="0"
-                        Maximum="1"
-                        SmallChange="10"
-                        LargeChange="10"
-                        Value="{Binding MainRealPosition}" />
+                           Text="{Binding CurrentPlayingGroup.CurrentPosition, FallbackValue='Actual: 00:00.000', StringFormat='Actual: {0}'}"/>
+                <Slider Minimum="0.0"
+                        Maximum="1.0"
+                        Padding="0,-15"
+                        Value="{Binding CurrentPlayingGroup.CurrentPosPerc, FallbackValue=0}"/>
+                <TextBlock HorizontalAlignment="Center"
+                           Text="{Binding AudioPlayerTime, FallbackValue='Audio: 00:00.000', StringFormat='Audio: {0}'}"/>
+                <ProgressBar Minimum="0.0"
+                             Maximum="1.0"
+                             Value="{Binding AudioPlayerPos}"/>
+                <TextBlock HorizontalAlignment="Center"
+                           Text="{Binding NoAudioPlayerTime, FallbackValue='Non-Audio: 00:00.000', StringFormat='Non-Audio: {0}'}"/>
+                <ProgressBar Minimum="0.0"
+                             Maximum="1.0"
+                             Value="{Binding NoAudioPlayerPos}"/>
             </StackPanel>
 
             <Slider Grid.Column="1"

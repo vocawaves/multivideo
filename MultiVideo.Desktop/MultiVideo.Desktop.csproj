@@ -8,6 +8,7 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <PublishAot>true</PublishAot>
+    <ApplicationIcon>miku.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

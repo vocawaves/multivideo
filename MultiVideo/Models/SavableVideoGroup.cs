@@ -8,10 +8,12 @@ namespace MultiVideo.Models;
 public class SavableVideoGroup
 {
     public string Title { get; set; } = "Untitled";
-    public string? MainVideoPath { get; set; }
-    public string? SecondaryVideoPath { get; set; }
-    public TimeSpan MainVideoStartDelay { get; set; }
-    public TimeSpan SecondaryVideoStartDelay { get; set; }
+    public string? AudioVideoPath { get; set; }
+    public string? NonAudioVideoPath { get; set; }
+    public TimeSpan AudioVideoStartDelay { get; set; }
+    public TimeSpan NonAudioVideoStartDelay { get; set; }
+    public bool NonAudioOnMainScreen { get; set; } = false;
+    public bool WaitForBothVideosToFinish { get; set; } = false;
     public string? ThumbnailBase64 { get; set; }
     
     public static SavableVideoGroup FromVideoGroup(VideoGroup videoGroup)
@@ -19,10 +21,12 @@ public class SavableVideoGroup
         var vg = new SavableVideoGroup
         {
             Title = videoGroup.Title,
-            MainVideoPath = videoGroup.MainVideoPath,
-            SecondaryVideoPath = videoGroup.SecondaryVideoPath,
-            MainVideoStartDelay = videoGroup.MainVideoStartDelay,
-            SecondaryVideoStartDelay = videoGroup.SecondaryVideoStartDelay
+            AudioVideoPath = videoGroup.AudioVideoPath,
+            NonAudioVideoPath = videoGroup.NonAudioVideoPath,
+            AudioVideoStartDelay = videoGroup.AudioVideoStartDelay,
+            NonAudioVideoStartDelay = videoGroup.NonAudioVideoStartDelay,
+            NonAudioOnMainScreen = videoGroup.NonAudioOnMainScreen,
+            WaitForBothVideosToFinish = videoGroup.WaitForBothVideosToFinish
         };
         if (videoGroup.Thumbnail is null)
             return vg;
@@ -36,11 +40,13 @@ public class SavableVideoGroup
     public VideoGroup ToVideoGroup()
     {
         var vg = new VideoGroup(
-            MainVideoPath,
-            SecondaryVideoPath,
+            AudioVideoPath,
+            NonAudioVideoPath,
             Title,
-            MainVideoStartDelay,
-            SecondaryVideoStartDelay
+            AudioVideoStartDelay,
+            NonAudioVideoStartDelay,
+            NonAudioOnMainScreen,
+            WaitForBothVideosToFinish
         );
         if (string.IsNullOrEmpty(ThumbnailBase64))
             return vg;
@@ -55,6 +61,9 @@ public class SavableVideoGroup
 [JsonSerializable(typeof(SavableVideoGroup))]
 [JsonSerializable(typeof(SavableVideoGroup[]))]
 [JsonSerializable(typeof(IEnumerable<SavableVideoGroup>))]
+[JsonSerializable(typeof(OldVideoGroup))]
+[JsonSerializable(typeof(OldVideoGroup[]))]
+[JsonSerializable(typeof(IEnumerable<OldVideoGroup>))]
 public partial class SavableVideoGroupContext : JsonSerializerContext
 {
 }

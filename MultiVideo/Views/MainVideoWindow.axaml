@@ -18,6 +18,6 @@
 
     <avalonia:VideoView HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        MediaPlayer="{Binding MainPlayer}" />
+                        MediaPlayer="{Binding AudioPlayer}" />
 
 </Window>

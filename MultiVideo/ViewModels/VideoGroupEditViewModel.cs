@@ -32,11 +32,11 @@ public partial class VideoGroupEditViewModel : ViewModelBase
 
     private bool CheckPaths()
     {
-        Group.VideoGroup.MainVideoPath = Group.VideoGroup.MainVideoPath?.Trim().Replace("\"", "")!;
-        Group.VideoGroup.SecondaryVideoPath = Group.VideoGroup.SecondaryVideoPath?.Trim().Replace("\"", "")!;
+        Group.VideoGroup.AudioVideoPath = Group.VideoGroup.AudioVideoPath?.Trim().Replace("\"", "")!;
+        Group.VideoGroup.NonAudioVideoPath = Group.VideoGroup.NonAudioVideoPath?.Trim().Replace("\"", "")!;
         ThumbnailPath = ThumbnailPath?.Trim().Replace("\"", "")!;
 
-        return (File.Exists(Group.VideoGroup.MainVideoPath) || File.Exists(Group.VideoGroup.SecondaryVideoPath)) 
+        return (File.Exists(Group.VideoGroup.AudioVideoPath) || File.Exists(Group.VideoGroup.NonAudioVideoPath)) 
             && (ThumbnailPath == null || File.Exists(ThumbnailPath));
     }
 

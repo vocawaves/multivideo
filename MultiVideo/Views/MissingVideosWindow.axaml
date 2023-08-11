@@ -41,10 +41,10 @@
                     <StackPanel Orientation="Vertical"
                                 Spacing="5">
                         <TextBlock Text="{Binding Title}"/>
-                        <TextBlock IsVisible="{Binding MainVideoPath, Converter={StaticResource ExistsConv}}"
-                                   Text="{Binding MainVideoPath}"/>
-                        <TextBlock IsVisible="{Binding MainVideoPath, Converter={StaticResource ExistsConv}}" 
-                                   Text="{Binding SecondaryVideoPath}"/>
+                        <TextBlock IsVisible="{Binding AudioVideoPath, Converter={StaticResource ExistsConv}}"
+                                   Text="{Binding AudioVideoPath}"/>
+                        <TextBlock IsVisible="{Binding NonAudioVideoPath, Converter={StaticResource ExistsConv}}" 
+                                   Text="{Binding NonAudioVideoPath}"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
