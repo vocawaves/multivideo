@@ -9,36 +9,48 @@ public partial class VideoGroup : ObservableObject
     [ObservableProperty]
     private string _title = "Untitled";
     [ObservableProperty]
-    private string? _mainVideoPath;
+    private string? _audioVideoPath;
     [ObservableProperty]
-    private string? _secondaryVideoPath;
+    private string? _nonAudioVideoPath;
     [ObservableProperty]
-    private TimeSpan _mainVideoStartDelay = TimeSpan.Zero;
+    private TimeSpan _audioVideoStartDelay = TimeSpan.Zero;
     [ObservableProperty]
-    private TimeSpan _secondaryVideoStartDelay = TimeSpan.Zero;
+    private TimeSpan _nonAudioVideoStartDelay = TimeSpan.Zero;
+    [ObservableProperty]
+    private bool _nonAudioOnMainScreen = false;
+    [ObservableProperty]
+    private bool _waitForBothVideosToFinish = false;
 
+    
     [ObservableProperty] 
     private Bitmap? _thumbnail;
+    
+    public bool IsMainDelayed => (AudioVideoStartDelay > NonAudioVideoStartDelay);
 
     public VideoGroup(
-        string? mainVideoPath, 
-        string? secondaryVideoPath, 
+        string? audioVideoPath, 
+        string? nonAudioVideoPath, 
         string? title = null, 
-        TimeSpan? mainDelay = null, 
-        TimeSpan? secondaryDelay = null, 
+        TimeSpan? audioVideoDelay = null, 
+        TimeSpan? nonAudioVideoDelay = null, 
+        bool useNonAudioOnMainScreen = false,
+        bool waitForBothVideosToFinish = false,
         Bitmap? thumbnail = null)
     {
-        MainVideoPath = mainVideoPath;
-        SecondaryVideoPath = secondaryVideoPath;
+        AudioVideoPath = audioVideoPath;
+        NonAudioVideoPath = nonAudioVideoPath;
         if (title is not null)
             Title = title;
 
-        if (mainDelay is not null)
-            MainVideoStartDelay = mainDelay.GetValueOrDefault();
+        if (audioVideoDelay is not null)
+            AudioVideoStartDelay = audioVideoDelay.GetValueOrDefault();
 
-        if (secondaryDelay is not null)
-            SecondaryVideoStartDelay = secondaryDelay.GetValueOrDefault();
+        if (nonAudioVideoDelay is not null)
+            NonAudioVideoStartDelay = nonAudioVideoDelay.GetValueOrDefault();
 
+        NonAudioOnMainScreen = useNonAudioOnMainScreen;
+        WaitForBothVideosToFinish = waitForBothVideosToFinish;
+        
         if (thumbnail is not null)
             Thumbnail = thumbnail;
     }

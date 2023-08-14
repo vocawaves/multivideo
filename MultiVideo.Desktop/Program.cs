@@ -31,6 +31,10 @@ class Program
         GC.KeepAlive(typeof(Avalonia.Svg.Skia.Svg).Assembly);
         return AppBuilder.Configure<App>()
             .UsePlatformDetect()
+            .With(new SkiaOptions()
+            {
+                MaxGpuResourceSizeBytes = 1920 * 1080 * 4 * 12
+            })
             .WithInterFont()
             .LogToTrace();
     }

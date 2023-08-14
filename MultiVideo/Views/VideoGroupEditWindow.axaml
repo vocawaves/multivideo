@@ -9,7 +9,7 @@
         x:DataType="viewModels:VideoGroupEditViewModel"
         Icon="/Assets/miku.ico"
         Width="500"
-        Height="420"
+        Height="520"
         Title="Edit Video Group"
         CanResize="False"
         SystemDecorations="BorderOnly"
@@ -24,7 +24,7 @@
     </Design.DataContext>
 
     <Grid Margin="5"
-          RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, Auto"
+          RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto, Auto"
           ColumnDefinitions="*, 2*">
 
         <!-- Left: Property Name; Right: Edit Box -->
@@ -48,14 +48,14 @@
                    TextAlignment="Center"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
-                   Text="Main Video Path" />
+                   Text="Audio Video Path" />
         <Grid Grid.Column="1"
               Grid.Row="1"
               Margin="10"
               ColumnDefinitions="*, Auto">
             <TextBox Grid.Column="0"
                      Name="MainPath"
-                     Text="{Binding Group.VideoGroup.MainVideoPath}"/>
+                     Text="{Binding Group.VideoGroup.AudioVideoPath}"/>
             <Button Grid.Column="1"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
@@ -70,7 +70,7 @@
                    TextAlignment="Center"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
-                   Text="Main Video Start Delay (ms)" />
+                   Text="Audio Video Start Delay (ms)" />
         <Grid Grid.Row="2"
               Grid.Column="1"
               Margin="10"
@@ -78,13 +78,13 @@
               ColumnDefinitions="100, *">
             <TextBox Grid.Column="0"
                      VerticalAlignment="Center"
-                     Text="{Binding Group.VideoGroup.MainVideoStartDelay, Converter={StaticResource TsConv}}">
+                     Text="{Binding Group.VideoGroup.AudioVideoStartDelay, Converter={StaticResource TsConv}}">
             </TextBox>
             <Slider Grid.Column="1"
                     Margin="10,0,0,0"
                     Minimum="0"
                     Maximum="10000"
-                    Value="{Binding Group.VideoGroup.MainVideoStartDelay, Converter={StaticResource TsConv}}" />
+                    Value="{Binding Group.VideoGroup.AudioVideoStartDelay, Converter={StaticResource TsConv}}" />
         </Grid>
         <!-- VideoGroup Secondary Video Path-->
         <TextBlock Grid.Row="3"
@@ -93,14 +93,14 @@
                    TextAlignment="Center"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
-                   Text="Secondary Video Path" />
+                   Text="Non-Audio Video Path" />
         <Grid Grid.Column="1"
               Grid.Row="3"
               Margin="10"
               ColumnDefinitions="*, Auto">
             <TextBox Grid.Column="0"
                      Name="SecondaryPath"
-                     Text="{Binding Group.VideoGroup.SecondaryVideoPath}"/>
+                     Text="{Binding Group.VideoGroup.NonAudioVideoPath}"/>
             <Button Grid.Column="1"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
@@ -115,7 +115,7 @@
                    TextAlignment="Center"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
-                   Text="Secondary Video Start Delay (ms)" />
+                   Text="Non-Audio Video Start Delay (ms)" />
         <Grid Grid.Row="4"
               Grid.Column="1"
               Margin="10"
@@ -123,30 +123,54 @@
               ColumnDefinitions="100, *">
             <TextBox Grid.Column="0"
                      VerticalAlignment="Center"
-                     Text="{Binding Group.VideoGroup.SecondaryVideoStartDelay, Converter={StaticResource TsConv}}">
+                     Text="{Binding Group.VideoGroup.NonAudioVideoStartDelay, Converter={StaticResource TsConv}}">
             </TextBox>
             <Slider Grid.Column="1"
                     Margin="10,0,0,0"
                     Minimum="0"
                     Maximum="10000"
-                    Value="{Binding Group.VideoGroup.SecondaryVideoStartDelay, Converter={StaticResource TsConv}}" />
+                    Value="{Binding Group.VideoGroup.NonAudioVideoStartDelay, Converter={StaticResource TsConv}}" />
         </Grid>
-
-        <!-- VideoGroup Thumbnail Path (Optional)-->
+        
         <TextBlock Grid.Row="5"
                    Grid.Column="0"
                    TextWrapping="Wrap"
                    TextAlignment="Center"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
+                   Text="Use Non-Audio On Main Screen" />
+        <CheckBox Grid.Row="5"
+                 Grid.Column="1"
+                 Margin="10"
+                 IsChecked="{Binding Group.VideoGroup.NonAudioOnMainScreen}" />
+        
+        <TextBlock Grid.Row="6"
+                   Grid.Column="0"
+                   TextWrapping="Wrap"
+                   TextAlignment="Center"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Text="Wait For Both Videos To Finish" />
+        <CheckBox Grid.Row="6"
+                  Grid.Column="1"
+                  Margin="10"
+                  IsChecked="{Binding Group.VideoGroup.WaitForBothVideosToFinish}" />
+
+        <!-- VideoGroup Thumbnail Path (Optional)-->
+        <TextBlock Grid.Row="7"
+                   Grid.Column="0"
+                   TextWrapping="Wrap"
+                   TextAlignment="Center"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
                    Text="Thumbnail Path (Optional)" />
-        <TextBox Grid.Row="5"
+        <TextBox Grid.Row="7"
                  Grid.Column="1"
                  Margin="10"
                  Text="{Binding ThumbnailPath}" />
 
         <!-- Buttons with parent Window as parameter-->
-        <Button Grid.Row="6"
+        <Button Grid.Row="8"
                 Grid.Column="0"
                 Margin="10"
                 HorizontalAlignment="Stretch"
@@ -154,7 +178,7 @@
                 Content="Save"
                 Command="{Binding SaveCommand}"
                 CommandParameter="{Binding $parent[Window]}" />
-        <Button Grid.Row="6"
+        <Button Grid.Row="8"
                 Grid.Column="1"
                 Margin="10"
                 HorizontalAlignment="Stretch"

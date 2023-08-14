@@ -27,27 +27,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ((IClassicDesktopStyleApplicationLifetime)Application
                 .Current?.ApplicationLifetime!).MainWindow));
 
-    private readonly SavableVideoGroupContext _saveCtx = new SavableVideoGroupContext(new JsonSerializerOptions()
+    private readonly SavableVideoGroupContext _saveCtx = new(new JsonSerializerOptions()
     {
         WriteIndented = true
     });
 
-    private readonly LibVLC _mainLibVlc;
-    private readonly LibVLC _lyricLibVlc;
-    private readonly LibVLC _lyricAudioLibVlc;
+    private readonly LibVLC _audioLibVlc;
+    private readonly LibVLC _noAudioLibVlc;
 
 
-    [ObservableProperty] private MediaPlayer _mainPlayer;
+    [ObservableProperty] private MediaPlayer _audioPlayer;
 
-    [ObservableProperty] private MediaPlayer _lyricPlayer;
-
-    [ObservableProperty] private MediaPlayer _lyricAudioPlayer;
-
-    [ObservableProperty] private bool _isAudioLyricInUse = false;
-
-    [ObservableProperty] private Media? _mainMedia;
-
-    [ObservableProperty] private Media? _lyricMedia;
+    [ObservableProperty] private MediaPlayer _noAudioPlayer;
+    private bool arePlayersSwitched = false;
 
     [ObservableProperty] private ObservableCollection<GroupWrapper> _videoGroups = new();
 
@@ -57,30 +49,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty] private int _volume = 100;
 
-    public TimeSpan MainPosition => TimeSpan.FromMilliseconds(
-        (IsAudioLyricInUse ? LyricAudioPlayer.Position : MainPlayer.Position) *
-        (IsAudioLyricInUse ? LyricAudioPlayer.Length : MainPlayer.Length));
+    [ObservableProperty] private PlayQueueItem? _currentPlayingGroup;
+    public float AudioPlayerPos => arePlayersSwitched ? NoAudioPlayer.Position : AudioPlayer.Position;
+    public float NoAudioPlayerPos => !arePlayersSwitched ? NoAudioPlayer.Position : AudioPlayer.Position;
 
-    public float MainRealPosition
-    {
-        get => IsAudioLyricInUse ? LyricAudioPlayer.Position : MainPlayer.Position;
-        set
-        {
-            if (IsAudioLyricInUse)
-            {
-                LyricAudioPlayer.Position = value;
-                OnPropertyChanged(nameof(MainPosition));
-                return;
-            }
-            var mainPosInTime = value * MainPlayer.Length;
-            var lyricPosInPercentage = (100.0f / LyricPlayer.Length) * mainPosInTime;
-            MainPlayer.Position = value;
-            LyricPlayer.Position = lyricPosInPercentage;
-            OnPropertyChanged(nameof(MainPosition));
-        }
-    }
+    public TimeSpan AudioPlayerTime => arePlayersSwitched
+        ? TimeSpan.FromMilliseconds(NoAudioPlayer.Time)
+        : TimeSpan.FromMilliseconds(AudioPlayer.Time);
 
-    [ObservableProperty] private GroupWrapper? _currentPlayingGroup;
+    public TimeSpan NoAudioPlayerTime => !arePlayersSwitched
+        ? TimeSpan.FromMilliseconds(NoAudioPlayer.Time)
+        : TimeSpan.FromMilliseconds(AudioPlayer.Time);
 
     #endregion
 
@@ -98,58 +77,32 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         //Init LibVLC
         Core.Initialize();
 
-        //string[] mainOptions = new string[]
-        //{
-        //    "--http-port=8080",
-        //    "--http-password=kaito"
-        //};
+        _audioLibVlc = new LibVLC();
+        _noAudioLibVlc = new LibVLC("--no-audio");
 
-        string[] lyricOptions = new string[]
-        {
-            //  "--http-port=8081",
-            //   "--http-password=kaito",
-            "--no-audio"
-        };
+        AudioPlayer = new MediaPlayer(_audioLibVlc);
+        NoAudioPlayer = new MediaPlayer(_noAudioLibVlc);
 
-        _mainLibVlc = new LibVLC();
-        _lyricLibVlc = new LibVLC(lyricOptions);
-        _lyricAudioLibVlc = new LibVLC();
+        AudioPlayer.EndReached += AudioPlayerOnEndReached;
+        NoAudioPlayer.EndReached += NonAudioPlayerOnEndReached;
 
-        //funky http for Numark
-        //try
-        //{
-        //    _mainLibVlc.AddInterface("http");
-        //    _lyricLibVlc.AddInterface("http");
-        //}
-        //catch
-        //{
-        // ignored
-        //}
-
-        //Init MediaPlayers
-        MainPlayer = new MediaPlayer(_mainLibVlc);
-        LyricPlayer = new MediaPlayer(_lyricLibVlc);
-        LyricAudioPlayer = new MediaPlayer(_lyricAudioLibVlc);
-
-        MainPlayer.EndReached += MainPlayerOnEndReached;
-        MainPlayer.PositionChanged += MainPlayerOnPositionChanged;
-        LyricAudioPlayer.PositionChanged += MainPlayerOnPositionChanged;
+        AudioPlayer.PositionChanged += (_, _) => OnPropertyChanged(nameof(AudioPlayerPos));
+        AudioPlayer.TimeChanged += (_, _) => OnPropertyChanged(nameof(AudioPlayerTime));
+        NoAudioPlayer.PositionChanged += (_, _) => OnPropertyChanged(nameof(NoAudioPlayerPos));
+        NoAudioPlayer.TimeChanged += (_, _) => OnPropertyChanged(nameof(NoAudioPlayerTime));
     }
 
-    private void MainPlayerOnPositionChanged(object? sender, MediaPlayerPositionChangedEventArgs e)
-    {
-        OnPropertyChanged(nameof(MainPosition));
-        OnPropertyChanged(nameof(MainRealPosition));
-    }
-
-    private void MainPlayerOnEndReached(object? sender, EventArgs e)
+    private void AudioPlayerOnEndReached(object? sender, EventArgs e)
     {
         if (CurrentPlayingGroup is null)
             return; //idk but yeah
         if (!IsPlaying)
             return; //stopped?
 
-        var indexOfCurrent = VideoGroups.IndexOf(CurrentPlayingGroup);
+        if (CurrentPlayingGroup.Group.VideoGroup.WaitForBothVideosToFinish && NoAudioPlayer.State != VLCState.Ended)
+            return;
+
+        var indexOfCurrent = VideoGroups.IndexOf(CurrentPlayingGroup.Group);
         if (indexOfCurrent == VideoGroups.Count - 1)
         {
             _ = Dispatcher.UIThread.InvokeAsync(Stop);
@@ -160,10 +113,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             await PlayFromBlock(VideoGroups[indexOfCurrent + 1]).ConfigureAwait(true));
     }
 
-    partial void OnVolumeChanged(int value)
+    private void NonAudioPlayerOnEndReached(object? sender, EventArgs e)
     {
-        MainPlayer.Volume = value;
-        LyricAudioPlayer.Volume = value;
+        if (CurrentPlayingGroup is null)
+            return; //idk but yeah
+        if (!IsPlaying)
+            return; //stopped?
+
+        if (CurrentPlayingGroup.Group.VideoGroup.WaitForBothVideosToFinish && AudioPlayer.State != VLCState.Ended)
+            return;
+
+        var indexOfCurrent = VideoGroups.IndexOf(CurrentPlayingGroup.Group);
+        if (indexOfCurrent == VideoGroups.Count - 1)
+        {
+            _ = Dispatcher.UIThread.InvokeAsync(Stop);
+            return;
+        }
+
+        _ = Dispatcher.UIThread.InvokeAsync(async () =>
+            await PlayFromBlock(VideoGroups[indexOfCurrent + 1]).ConfigureAwait(true));
     }
 
     #region Playback Commands
@@ -172,15 +140,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void Stop()
     {
         IsPlaying = false;
-        MainPlayer.Stop();
-        LyricPlayer.Stop();
-        LyricAudioPlayer.Stop();
-        MainMedia = null;
-        LyricMedia = null;
         if (CurrentPlayingGroup is null)
             return;
-        CurrentPlayingGroup.IsPlaying = false;
+        CurrentPlayingGroup.Group.IsPlaying = false;
+        CurrentPlayingGroup?.Dispose();
         CurrentPlayingGroup = null;
+        OnPropertyChanged(nameof(AudioPlayerPos));
+        OnPropertyChanged(nameof(AudioPlayerTime));
+        OnPropertyChanged(nameof(NoAudioPlayerPos));
+        OnPropertyChanged(nameof(NoAudioPlayerTime));
     }
 
     [RelayCommand]
@@ -195,80 +163,41 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        IsAudioLyricInUse = string.IsNullOrEmpty(group.VideoGroup.MainVideoPath);
-
-        var mainVlcToUse = _mainLibVlc;
-        var lyricVlcToUse = IsAudioLyricInUse ? _lyricAudioLibVlc : _lyricLibVlc;
-        var mainPlayerToUse = MainPlayer;
-        var lyricPlayerToUse = IsAudioLyricInUse ? LyricAudioPlayer : LyricPlayer;
-
-        MainMedia = !string.IsNullOrEmpty(group.VideoGroup.MainVideoPath)
-            ? new Media(mainVlcToUse, group.VideoGroup.MainVideoPath)
-            : null;
-        if (MainMedia is not null)
-            await MainMedia.Parse().ConfigureAwait(true);
-        LyricMedia = !string.IsNullOrEmpty(group.VideoGroup.SecondaryVideoPath)
-            ? new Media(lyricVlcToUse, group.VideoGroup.SecondaryVideoPath)
-            : null;
-        if (LyricMedia is not null)
-            await LyricMedia.Parse().ConfigureAwait(true);
-
-        mainPlayerToUse.Media = MainMedia;
-        lyricPlayerToUse.Media = LyricMedia;
-
-
-        var waitForMain = group.VideoGroup.MainVideoStartDelay > group.VideoGroup.SecondaryVideoStartDelay;
-        var actualWaitTime = waitForMain
-            ? (group.VideoGroup.MainVideoStartDelay - group.VideoGroup.SecondaryVideoStartDelay)
-            : (group.VideoGroup.SecondaryVideoStartDelay - group.VideoGroup.MainVideoStartDelay);
-
-        //High speed case
-        if (group.VideoGroup.MainVideoStartDelay == TimeSpan.Zero &&
-            group.VideoGroup.SecondaryVideoStartDelay == TimeSpan.Zero)
+        switch (group.VideoGroup.NonAudioOnMainScreen)
         {
-            mainPlayerToUse.Play();
-            lyricPlayerToUse.Play();
+            case true when !arePlayersSwitched:
+                (AudioPlayer, NoAudioPlayer) = (NoAudioPlayer, AudioPlayer);
+                arePlayersSwitched = true;
+                break;
+            case false when arePlayersSwitched:
+                (AudioPlayer, NoAudioPlayer) = (NoAudioPlayer, AudioPlayer);
+                arePlayersSwitched = false;
+                break;
         }
-        else if (waitForMain)
-        {
-            lyricPlayerToUse.Play();
-            await Task.Delay(actualWaitTime).ConfigureAwait(true);
-            mainPlayerToUse.Play();
-        }
-        else
-        {
-            mainPlayerToUse.Play();
-            await Task.Delay(actualWaitTime).ConfigureAwait(true);
-            lyricPlayerToUse.Play();
-        }
+
+        var pqi = new PlayQueueItem(group, AudioPlayer, NoAudioPlayer, _audioLibVlc, _noAudioLibVlc);
+        await pqi.Initialize();
 
         IsPlaying = true;
         group.IsPlaying = true;
-        CurrentPlayingGroup = group;
+        CurrentPlayingGroup = pqi;
+
+        pqi.Play();
     }
 
     [RelayCommand]
     private async Task PlayFromButton()
     {
-        //Pause
-        if (MainPlayer.State == VLCState.Playing || LyricPlayer.State == VLCState.Playing ||
-            LyricAudioPlayer.State == VLCState.Playing)
+        //Pause/Resume
+        if (AudioPlayer.State == VLCState.Playing || NoAudioPlayer.State == VLCState.Playing)
         {
-            MainPlayer.Pause();
-            if (IsAudioLyricInUse)
-                LyricAudioPlayer.Pause();
-            else
-                LyricPlayer.Pause();
+            CurrentPlayingGroup?.Pause();
         }
-        else if (MainPlayer.State == VLCState.Paused || LyricPlayer.State == VLCState.Paused ||
-                 LyricAudioPlayer.State == VLCState.Paused)
+        else if (AudioPlayer.State == VLCState.Paused || NoAudioPlayer.State == VLCState.Paused)
         {
-            MainPlayer.Play();
-            if (IsAudioLyricInUse)
-                LyricAudioPlayer.Play();
-            else
-                LyricPlayer.Play();
+            CurrentPlayingGroup?.Resume();
         }
+        //Play first group
         else
         {
             var group = VideoGroups.FirstOrDefault();
@@ -288,7 +217,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task Rewind()
     {
-        var index = CurrentPlayingGroup is null ? 0 : VideoGroups.IndexOf(CurrentPlayingGroup);
+        var index = CurrentPlayingGroup is null ? 0 : VideoGroups.IndexOf(CurrentPlayingGroup.Group);
         if (index == 0)
         {
             NotificationManager.Show(new Notification(
@@ -313,7 +242,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        var index = CurrentPlayingGroup is null ? 0 : VideoGroups.IndexOf(CurrentPlayingGroup);
+        var index = CurrentPlayingGroup is null ? 0 : VideoGroups.IndexOf(CurrentPlayingGroup.Group);
         if (index == VideoGroups.Count - 1)
         {
             NotificationManager.Show(new Notification(
@@ -409,14 +338,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var sfo = new FilePickerSaveOptions()
         {
             Title = "Save Video Groups",
-            DefaultExtension = "mvc",
+            DefaultExtension = "mvc2",
             ShowOverwritePrompt = true,
             FileTypeChoices = new[]
             {
                 new FilePickerFileType("MultiVideo Configuration")
                 {
                     MimeTypes = new[] { "application/json" },
-                    Patterns = new[] { "*.mvc" }
+                    Patterns = new[] { "*.mvc2" }
                 }
             }
         };
@@ -446,7 +375,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 new FilePickerFileType("MultiVideo Configuration")
                 {
                     MimeTypes = new[] { "application/json" },
-                    Patterns = new[] { "*.mvc" }
+                    Patterns = new[] { "*.mvc2" }
                 }
             }
         };
@@ -465,8 +394,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
 
         var missingGroups = savableGroups.Where(x =>
-            (!string.IsNullOrEmpty(x.MainVideoPath) && !File.Exists(x.MainVideoPath)) ||
-            (!string.IsNullOrEmpty(x.SecondaryVideoPath) && !File.Exists(x.SecondaryVideoPath)));
+            (!string.IsNullOrEmpty(x.AudioVideoPath) && !File.Exists(x.AudioVideoPath)) ||
+            (!string.IsNullOrEmpty(x.NonAudioVideoPath) && !File.Exists(x.NonAudioVideoPath)));
         if (missingGroups.Any())
         {
             var mvm = new MissingVideosViewModel(savableGroups);
@@ -478,6 +407,49 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (mvwResult is null or false)
                 return;
         }
+
+        var groups = savableGroups.Select(x => x.ToVideoGroup());
+        VideoGroups.Clear();
+
+        foreach (var group in groups)
+        {
+            VideoGroups.Add(new GroupWrapper
+            {
+                VideoGroup = group,
+                IsInitial = false
+            });
+        }
+    }
+    
+    [RelayCommand]
+    private async Task ImportV1Groups(Window parent)
+    {
+        var ofo = new FilePickerOpenOptions()
+        {
+            Title = "Load Video Groups",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("MultiVideo Configuration")
+                {
+                    MimeTypes = new[] { "application/json" },
+                    Patterns = new[] { "*.mvc" }
+                }
+            }
+        };
+
+        var files = await parent.StorageProvider.OpenFilePickerAsync(ofo).ConfigureAwait(true);
+        if (files.Count == 0)
+            return;
+
+        var path = files[0].TryGetLocalPath();
+        if (path is null)
+            return;
+
+        var json = await File.ReadAllTextAsync(path).ConfigureAwait(true);
+        var savableGroups = JsonSerializer.Deserialize(json, _saveCtx.OldVideoGroupArray);
+        if (savableGroups is null)
+            return;
 
         var groups = savableGroups.Select(x => x.ToVideoGroup());
         VideoGroups.Clear();
@@ -506,11 +478,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         Stop();
         _mainVideoWindow?.Close();
         _lyricVideoWindow?.Close();
-        MainPlayer.Dispose();
-        LyricPlayer.Dispose();
-        LyricAudioPlayer.Dispose();
-        _mainLibVlc.Dispose();
-        _lyricLibVlc.Dispose();
-        _lyricAudioLibVlc.Dispose();
+        AudioPlayer.Dispose();
+        NoAudioPlayer.Dispose();
+        _audioLibVlc.Dispose();
+        _noAudioLibVlc.Dispose();
     }
 }
